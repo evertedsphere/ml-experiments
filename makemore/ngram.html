@@ -1,0 +1,676 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN"
+"http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en">
+<head>
+<!-- 2023-08-13 Sun 14:14 -->
+<meta http-equiv="Content-Type" content="text/html;charset=utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>(Very) simple n-gram language model</title>
+<meta name="generator" content="Org Mode" />
+<style>
+  #content { max-width: 60em; margin: auto; }
+  .title  { text-align: center;
+             margin-bottom: .2em; }
+  .subtitle { text-align: center;
+              font-size: medium;
+              font-weight: bold;
+              margin-top:0; }
+  .todo   { font-family: monospace; color: red; }
+  .done   { font-family: monospace; color: green; }
+  .priority { font-family: monospace; color: orange; }
+  .tag    { background-color: #eee; font-family: monospace;
+            padding: 2px; font-size: 80%; font-weight: normal; }
+  .timestamp { color: #bebebe; }
+  .timestamp-kwd { color: #5f9ea0; }
+  .org-right  { margin-left: auto; margin-right: 0px;  text-align: right; }
+  .org-left   { margin-left: 0px;  margin-right: auto; text-align: left; }
+  .org-center { margin-left: auto; margin-right: auto; text-align: center; }
+  .underline { text-decoration: underline; }
+  #postamble p, #preamble p { font-size: 90%; margin: .2em; }
+  p.verse { margin-left: 3%; }
+  pre {
+    border: 1px solid #e6e6e6;
+    border-radius: 3px;
+    background-color: #f2f2f2;
+    padding: 8pt;
+    font-family: monospace;
+    overflow: auto;
+    margin: 1.2em;
+  }
+  pre.src {
+    position: relative;
+    overflow: auto;
+  }
+  pre.src:before {
+    display: none;
+    position: absolute;
+    top: -8px;
+    right: 12px;
+    padding: 3px;
+    color: #555;
+    background-color: #f2f2f299;
+  }
+  pre.src:hover:before { display: inline; margin-top: 14px;}
+  /* Languages per Org manual */
+  pre.src-asymptote:before { content: 'Asymptote'; }
+  pre.src-awk:before { content: 'Awk'; }
+  pre.src-authinfo::before { content: 'Authinfo'; }
+  pre.src-C:before { content: 'C'; }
+  /* pre.src-C++ doesn't work in CSS */
+  pre.src-clojure:before { content: 'Clojure'; }
+  pre.src-css:before { content: 'CSS'; }
+  pre.src-D:before { content: 'D'; }
+  pre.src-ditaa:before { content: 'ditaa'; }
+  pre.src-dot:before { content: 'Graphviz'; }
+  pre.src-calc:before { content: 'Emacs Calc'; }
+  pre.src-emacs-lisp:before { content: 'Emacs Lisp'; }
+  pre.src-fortran:before { content: 'Fortran'; }
+  pre.src-gnuplot:before { content: 'gnuplot'; }
+  pre.src-haskell:before { content: 'Haskell'; }
+  pre.src-hledger:before { content: 'hledger'; }
+  pre.src-java:before { content: 'Java'; }
+  pre.src-js:before { content: 'Javascript'; }
+  pre.src-latex:before { content: 'LaTeX'; }
+  pre.src-ledger:before { content: 'Ledger'; }
+  pre.src-lisp:before { content: 'Lisp'; }
+  pre.src-lilypond:before { content: 'Lilypond'; }
+  pre.src-lua:before { content: 'Lua'; }
+  pre.src-matlab:before { content: 'MATLAB'; }
+  pre.src-mscgen:before { content: 'Mscgen'; }
+  pre.src-ocaml:before { content: 'Objective Caml'; }
+  pre.src-octave:before { content: 'Octave'; }
+  pre.src-org:before { content: 'Org mode'; }
+  pre.src-oz:before { content: 'OZ'; }
+  pre.src-plantuml:before { content: 'Plantuml'; }
+  pre.src-processing:before { content: 'Processing.js'; }
+  pre.src-python:before { content: 'Python'; }
+  pre.src-R:before { content: 'R'; }
+  pre.src-ruby:before { content: 'Ruby'; }
+  pre.src-sass:before { content: 'Sass'; }
+  pre.src-scheme:before { content: 'Scheme'; }
+  pre.src-screen:before { content: 'Gnu Screen'; }
+  pre.src-sed:before { content: 'Sed'; }
+  pre.src-sh:before { content: 'shell'; }
+  pre.src-sql:before { content: 'SQL'; }
+  pre.src-sqlite:before { content: 'SQLite'; }
+  /* additional languages in org.el's org-babel-load-languages alist */
+  pre.src-forth:before { content: 'Forth'; }
+  pre.src-io:before { content: 'IO'; }
+  pre.src-J:before { content: 'J'; }
+  pre.src-makefile:before { content: 'Makefile'; }
+  pre.src-maxima:before { content: 'Maxima'; }
+  pre.src-perl:before { content: 'Perl'; }
+  pre.src-picolisp:before { content: 'Pico Lisp'; }
+  pre.src-scala:before { content: 'Scala'; }
+  pre.src-shell:before { content: 'Shell Script'; }
+  pre.src-ebnf2ps:before { content: 'ebfn2ps'; }
+  /* additional language identifiers per "defun org-babel-execute"
+       in ob-*.el */
+  pre.src-cpp:before  { content: 'C++'; }
+  pre.src-abc:before  { content: 'ABC'; }
+  pre.src-coq:before  { content: 'Coq'; }
+  pre.src-groovy:before  { content: 'Groovy'; }
+  /* additional language identifiers from org-babel-shell-names in
+     ob-shell.el: ob-shell is the only babel language using a lambda to put
+     the execution function name together. */
+  pre.src-bash:before  { content: 'bash'; }
+  pre.src-csh:before  { content: 'csh'; }
+  pre.src-ash:before  { content: 'ash'; }
+  pre.src-dash:before  { content: 'dash'; }
+  pre.src-ksh:before  { content: 'ksh'; }
+  pre.src-mksh:before  { content: 'mksh'; }
+  pre.src-posh:before  { content: 'posh'; }
+  /* Additional Emacs modes also supported by the LaTeX listings package */
+  pre.src-ada:before { content: 'Ada'; }
+  pre.src-asm:before { content: 'Assembler'; }
+  pre.src-caml:before { content: 'Caml'; }
+  pre.src-delphi:before { content: 'Delphi'; }
+  pre.src-html:before { content: 'HTML'; }
+  pre.src-idl:before { content: 'IDL'; }
+  pre.src-mercury:before { content: 'Mercury'; }
+  pre.src-metapost:before { content: 'MetaPost'; }
+  pre.src-modula-2:before { content: 'Modula-2'; }
+  pre.src-pascal:before { content: 'Pascal'; }
+  pre.src-ps:before { content: 'PostScript'; }
+  pre.src-prolog:before { content: 'Prolog'; }
+  pre.src-simula:before { content: 'Simula'; }
+  pre.src-tcl:before { content: 'tcl'; }
+  pre.src-tex:before { content: 'TeX'; }
+  pre.src-plain-tex:before { content: 'Plain TeX'; }
+  pre.src-verilog:before { content: 'Verilog'; }
+  pre.src-vhdl:before { content: 'VHDL'; }
+  pre.src-xml:before { content: 'XML'; }
+  pre.src-nxml:before { content: 'XML'; }
+  /* add a generic configuration mode; LaTeX export needs an additional
+     (add-to-list 'org-latex-listings-langs '(conf " ")) in .emacs */
+  pre.src-conf:before { content: 'Configuration File'; }
+
+  table { border-collapse:collapse; }
+  caption.t-above { caption-side: top; }
+  caption.t-bottom { caption-side: bottom; }
+  td, th { vertical-align:top;  }
+  th.org-right  { text-align: center;  }
+  th.org-left   { text-align: center;   }
+  th.org-center { text-align: center; }
+  td.org-right  { text-align: right;  }
+  td.org-left   { text-align: left;   }
+  td.org-center { text-align: center; }
+  dt { font-weight: bold; }
+  .footpara { display: inline; }
+  .footdef  { margin-bottom: 1em; }
+  .figure { padding: 1em; }
+  .figure p { text-align: center; }
+  .equation-container {
+    display: table;
+    text-align: center;
+    width: 100%;
+  }
+  .equation {
+    vertical-align: middle;
+  }
+  .equation-label {
+    display: table-cell;
+    text-align: right;
+    vertical-align: middle;
+  }
+  .inlinetask {
+    padding: 10px;
+    border: 2px solid gray;
+    margin: 10px;
+    background: #ffffcc;
+  }
+  #org-div-home-and-up
+   { text-align: right; font-size: 70%; white-space: nowrap; }
+  textarea { overflow-x: auto; }
+  .linenr { font-size: smaller }
+  .code-highlighted { background-color: #ffff00; }
+  .org-info-js_info-navigation { border-style: none; }
+  #org-info-js_console-label
+    { font-size: 10px; font-weight: bold; white-space: nowrap; }
+  .org-info-js_search-highlight
+    { background-color: #ffff00; color: #000000; font-weight: bold; }
+  .org-svg { }
+</style>
+<script>
+  window.MathJax = {
+    tex: {
+      ams: {
+        multlineWidth: '85%'
+      },
+      tags: 'ams',
+      tagSide: 'right',
+      tagIndent: '.8em'
+    },
+    chtml: {
+      scale: 1.0,
+      displayAlign: 'center',
+      displayIndent: '0em'
+    },
+    svg: {
+      scale: 1.0,
+      displayAlign: 'center',
+      displayIndent: '0em'
+    },
+    output: {
+      font: 'mathjax-modern',
+      displayOverflow: 'overflow'
+    }
+  };
+</script>
+
+<script
+  id="MathJax-script"
+  async
+  src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js">
+</script>
+</head>
+<body>
+<div id="content" class="content">
+<h1 class="title">(Very) simple n-gram language model</h1>
+<div id="table-of-contents" role="doc-toc">
+<h2>Table of Contents</h2>
+<div id="text-table-of-contents" role="doc-toc">
+<ul>
+<li><a href="#org14574d1">1. Introduction</a></li>
+<li><a href="#org7b5e117">2. Preliminaries</a></li>
+<li><a href="#org4835d29">3. Directly estimating the probabilities</a>
+<ul>
+<li><a href="#org2242a9c">3.1. Building the lookup tables</a></li>
+<li><a href="#org74c82be">3.2. Building the probability distribution over each key</a></li>
+<li><a href="#org8ac5a6b">3.3. Iteratively sampling to generate fake names</a></li>
+</ul>
+</li>
+<li><a href="#orgde00dc8">4. A cheap neural network approach</a>
+<ul>
+<li><a href="#org7d69daa">4.1. The forward pass</a></li>
+<li><a href="#org375c032">4.2. Sampling from the model</a></li>
+<li><a href="#org926eed1">4.3. The training loop</a></li>
+<li><a href="#org2b3bec3">4.4. How did our losses change?</a></li>
+<li><a href="#orgb9b78df">4.5. Extra: how low can the loss get?</a></li>
+</ul>
+</li>
+</ul>
+</div>
+</div>
+
+<div id="outline-container-org14574d1" class="outline-2">
+<h2 id="org14574d1"><span class="section-number-2">1.</span> Introduction</h2>
+<div class="outline-text-2" id="text-1">
+<p>
+This follows Andrej Karpathy&rsquo;s <code>makemore</code> videos.
+</p>
+</div>
+</div>
+
+<div id="outline-container-org7b5e117" class="outline-2">
+<h2 id="org7b5e117"><span class="section-number-2">2.</span> Preliminaries</h2>
+<div class="outline-text-2" id="text-2">
+<div class="org-src-container">
+<pre class="src src-jupyter-python"><span style="color: #fb4934;">import</span> math
+<span style="color: #fb4934;">import</span> numpy <span style="color: #fb4934;">as</span> np
+<span style="color: #fb4934;">import</span> matplotlib.pyplot <span style="color: #fb4934;">as</span> plt
+<span style="color: #fb4934;">from</span> collections <span style="color: #fb4934;">import</span> defaultdict
+<span style="color: #fb4934;">import</span> torch
+
+torch.manual_seed(<span style="color: #d3869b; font-weight: bold;">0</span>)
+
+<span style="color: #fb4934;">def</span> <span style="color: #b8bb26;">get_names</span>():
+    <span style="color: #fb4934;">return</span> <span style="color: #fe8019;">open</span>(<span style="color: #b8bb26;">'names.txt'</span>, <span style="color: #b8bb26;">'r'</span>).read().splitlines()
+
+<span style="color: #83a598;">names</span> = get_names()
+names[:<span style="color: #d3869b; font-weight: bold;">5</span>]
+</pre>
+</div>
+
+<table border="2" cellspacing="0" cellpadding="6" rules="groups" frame="hsides">
+
+
+<colgroup>
+<col  class="org-left" />
+
+<col  class="org-left" />
+
+<col  class="org-left" />
+
+<col  class="org-left" />
+
+<col  class="org-left" />
+</colgroup>
+<tbody>
+<tr>
+<td class="org-left">emma</td>
+<td class="org-left">olivia</td>
+<td class="org-left">ava</td>
+<td class="org-left">isabella</td>
+<td class="org-left">sophia</td>
+</tr>
+</tbody>
+</table>
+</div>
+</div>
+
+<div id="outline-container-org4835d29" class="outline-2">
+<h2 id="org4835d29"><span class="section-number-2">3.</span> Directly estimating the probabilities</h2>
+<div class="outline-text-2" id="text-3">
+</div>
+<div id="outline-container-org2242a9c" class="outline-3">
+<h3 id="org2242a9c"><span class="section-number-3">3.1.</span> Building the lookup tables</h3>
+<div class="outline-text-3" id="text-3-1">
+<p>
+These will allow us to convert the n-character context into an integer and back,
+and similarly for the 1-character prediction from the context, which we will use to
+put them into a matrix later.
+</p>
+
+<div class="org-src-container">
+<pre class="src src-jupyter-python"><span style="color: #83a598;">ngram_n</span> = <span style="color: #d3869b; font-weight: bold;">2</span>
+
+<span style="color: #fb4934;">def</span> <span style="color: #b8bb26;">augment</span>(n, word):
+    <span style="color: #fb4934;">return</span> <span style="color: #b8bb26;">'.'</span>*(n-<span style="color: #d3869b; font-weight: bold;">1</span>) + word + <span style="color: #b8bb26;">'.'</span>*(n-<span style="color: #d3869b; font-weight: bold;">1</span>)
+
+<span style="color: #fb4934;">def</span> <span style="color: #b8bb26;">split_kv</span>(i, n, word):
+    <span style="color: #83a598;">a</span> = augment(n, word)
+    <span style="color: #83a598;">key</span> = a[i:i+n-<span style="color: #d3869b; font-weight: bold;">1</span>]
+    <span style="color: #83a598;">val</span> = a[i+n-<span style="color: #d3869b; font-weight: bold;">1</span>]
+    <span style="color: #928374;"># </span><span style="color: #928374;">print(i, i+n-1, word, a, key, val)</span>
+    <span style="color: #fb4934;">return</span> (key, val)
+
+<span style="color: #fb4934;">def</span> <span style="color: #b8bb26;">split_kv_index</span>(i, n, word):
+    <span style="color: #83a598;">k</span>, <span style="color: #83a598;">v</span> = split_kv(i, n, word)
+    <span style="color: #fb4934;">return</span> (ktoi[k], vtoi[v])
+
+<span style="color: #fb4934;">def</span> <span style="color: #b8bb26;">all_splits</span>(n, word):
+    <span style="color: #83a598;">ks</span> = []
+    <span style="color: #83a598;">vs</span> = []
+    <span style="color: #fb4934;">for</span> i <span style="color: #fb4934;">in</span> <span style="color: #fe8019;">range</span>(<span style="color: #fe8019;">len</span>(word) + <span style="color: #d3869b; font-weight: bold;">1</span>):
+        <span style="color: #83a598;">k</span>, <span style="color: #83a598;">v</span> = split_kv(i, n, word)
+        ks.append(k)
+        vs.append(v)
+    <span style="color: #fb4934;">return</span> (ks, vs)
+
+<span style="color: #fb4934;">def</span> <span style="color: #b8bb26;">ngrams_of</span>(n, word):
+    <span style="color: #83a598;">out</span> = <span style="color: #fe8019;">dict</span>()
+    <span style="color: #83a598;">ks</span>, <span style="color: #83a598;">vs</span> = all_splits(n, word)
+    <span style="color: #fb4934;">for</span> k, v <span style="color: #fb4934;">in</span> <span style="color: #fe8019;">zip</span>(ks, vs):
+        <span style="color: #83a598;">out</span>[<span style="color: #83a598;">k</span>] = v
+    <span style="color: #fb4934;">return</span> out
+
+<span style="color: #83a598;">all_ngrams</span> = <span style="color: #fe8019;">list</span>(ngrams_of(ngram_n, name) <span style="color: #fb4934;">for</span> name <span style="color: #fb4934;">in</span> names)
+
+<span style="color: #fb4934;">def</span> <span style="color: #b8bb26;">gen_maps</span>(g):
+    <span style="color: #83a598;">r</span> = <span style="color: #fe8019;">sorted</span>(<span style="color: #fe8019;">list</span>(<span style="color: #fe8019;">set</span>(g)))
+    <span style="color: #83a598;">rtoi</span> = {<span style="color: #83a598;">z</span>:i <span style="color: #fb4934;">for</span> i,z <span style="color: #fb4934;">in</span> <span style="color: #fe8019;">enumerate</span>(r)}
+    itor = {<span style="color: #83a598;">i</span>:z <span style="color: #fb4934;">for</span> z,i <span style="color: #fb4934;">in</span> rtoi.items()}
+    nr = <span style="color: #fe8019;">len</span>(r)
+    <span style="color: #fb4934;">return</span> (rtoi, itor, nr)
+
+(<span style="color: #83a598;">ktoi</span>, <span style="color: #83a598;">itok</span>, <span style="color: #83a598;">nk</span>) = gen_maps(k <span style="color: #fb4934;">for</span> d <span style="color: #fb4934;">in</span> all_ngrams <span style="color: #fb4934;">for</span> k <span style="color: #fb4934;">in</span> d.keys())
+(<span style="color: #83a598;">vtoi</span>, <span style="color: #83a598;">itov</span>, <span style="color: #83a598;">nv</span>) = gen_maps(k <span style="color: #fb4934;">for</span> d <span style="color: #fb4934;">in</span> all_ngrams <span style="color: #fb4934;">for</span> k <span style="color: #fb4934;">in</span> d.values())
+
+<span style="color: #fe8019;">print</span>(nk, nv)
+</pre>
+</div>
+
+<pre class="example">
+27 27
+</pre>
+
+<p>
+Now that we have our keys and values, we can build a Torch tensor of frequencies:
+</p>
+
+<div class="org-src-container">
+<pre class="src src-jupyter-python"><span style="color: #83a598;">N</span> = torch.zeros((nk, nv), dtype=torch.int32)
+<span style="color: #fb4934;">for</span> word <span style="color: #fb4934;">in</span> names:
+    <span style="color: #fb4934;">for</span> i <span style="color: #fb4934;">in</span> <span style="color: #fe8019;">range</span>(<span style="color: #fe8019;">len</span>(word) + <span style="color: #d3869b; font-weight: bold;">1</span>):
+        <span style="color: #83a598;">ik</span>, <span style="color: #83a598;">iv</span> = split_kv_index(i, ngram_n, word)
+        N[<span style="color: #83a598;">ik</span>, <span style="color: #83a598;">iv</span>] += <span style="color: #d3869b; font-weight: bold;">1</span>
+</pre>
+</div>
+</div>
+</div>
+
+<div id="outline-container-org74c82be" class="outline-3">
+<h3 id="org74c82be"><span class="section-number-3">3.2.</span> Building the probability distribution over each key</h3>
+<div class="outline-text-3" id="text-3-2">
+<div class="org-src-container">
+<pre class="src src-jupyter-python"><span style="color: #83a598;">P</span> = N.<span style="color: #fe8019;">float</span>()
+<span style="color: #83a598;">P</span> = P / P.<span style="color: #fe8019;">sum</span>(<span style="color: #d3869b; font-weight: bold;">1</span>, keepdims=<span style="color: #d3869b;">True</span>)
+P[<span style="color: #d3869b; font-weight: bold;">0</span>]
+</pre>
+</div>
+
+<pre class="example">
+tensor([0.0000, 0.1377, 0.0408, 0.0481, 0.0528, 0.0478, 0.0130, 0.0209, 0.0273,
+        0.0184, 0.0756, 0.0925, 0.0491, 0.0792, 0.0358, 0.0123, 0.0161, 0.0029,
+        0.0512, 0.0642, 0.0408, 0.0024, 0.0117, 0.0096, 0.0042, 0.0167, 0.0290])
+</pre>
+
+
+<p>
+Does each row really represent a probability distribution?
+</p>
+
+<div class="org-src-container">
+<pre class="src src-jupyter-python">P.<span style="color: #fe8019;">sum</span>(<span style="color: #d3869b; font-weight: bold;">1</span>)[<span style="color: #d3869b; font-weight: bold;">0</span>:<span style="color: #d3869b; font-weight: bold;">10</span>]
+</pre>
+</div>
+
+<pre class="example">
+tensor([1.0000, 1.0000, 1.0000, 1.0000, 1.0000, 1.0000, 1.0000, 1.0000, 1.0000,
+        1.0000])
+</pre>
+
+
+<p>
+Note that this isn&rsquo;t really necessary: <code>torch.multinomial</code> works fine with things
+that don&rsquo;t sum to \(1\).
+</p>
+</div>
+</div>
+
+<div id="outline-container-org8ac5a6b" class="outline-3">
+<h3 id="org8ac5a6b"><span class="section-number-3">3.3.</span> Iteratively sampling to generate fake names</h3>
+<div class="outline-text-3" id="text-3-3">
+<div class="org-src-container">
+<pre class="src src-jupyter-python">torch.manual_seed(<span style="color: #d3869b; font-weight: bold;">0</span>)
+<span style="color: #83a598;">gens</span> = []
+<span style="color: #fb4934;">for</span> i <span style="color: #fb4934;">in</span> <span style="color: #fe8019;">range</span>(<span style="color: #d3869b; font-weight: bold;">10</span>):
+    <span style="color: #83a598;">out</span> = <span style="color: #b8bb26;">'.'</span> * (ngram_n - <span style="color: #d3869b; font-weight: bold;">1</span>)
+    <span style="color: #83a598;">n</span> = <span style="color: #d3869b; font-weight: bold;">0</span>
+    <span style="color: #83a598;">z</span> = <span style="color: #d3869b;">None</span>
+    <span style="color: #fb4934;">while</span> <span style="color: #d3869b;">True</span>:
+        z = P[n]
+        <span style="color: #83a598;">new_n</span> = torch.multinomial(P[n], <span style="color: #d3869b; font-weight: bold;">1</span>, <span style="color: #d3869b;">True</span>).data.item()
+        <span style="color: #83a598;">n</span> = new_n
+        <span style="color: #fb4934;">if</span> n == <span style="color: #d3869b; font-weight: bold;">0</span>:
+            <span style="color: #fb4934;">break</span>
+        out += itov[n]
+        n = ktoi[out[<span style="color: #d3869b; font-weight: bold;">1</span>-ngram_n:]]
+    gens.append(out[ngram_n-<span style="color: #d3869b; font-weight: bold;">1</span>:])
+<span style="color: #fe8019;">print</span>(gens)
+</pre>
+</div>
+
+<pre class="example">
+['bhrirerirco', 'maren', 'f', 'lem', 'a', 'vieiynana', 'sa', 'l', 'merlershonin', 'aytty']
+</pre>
+</div>
+</div>
+</div>
+
+<div id="outline-container-orgde00dc8" class="outline-2">
+<h2 id="orgde00dc8"><span class="section-number-2">4.</span> A cheap neural network approach</h2>
+<div class="outline-text-2" id="text-4">
+<p>
+One-layer neural network: we take our \(N_k\) keys and one-hot them, then feed
+them into a \(N_k \times N_v\) matrix whose output we softmax to produce a
+probability distribution over the values.
+</p>
+
+<p>
+First, let&rsquo;s re-seed the random number generator, so we can deterministically re-execute the rest of this buffer without
+having to recompute everything higher up.
+</p>
+
+<div class="org-src-container">
+<pre class="src src-jupyter-python"><span style="color: #fb4934;">import</span> torch.nn.functional <span style="color: #fb4934;">as</span> F
+torch.manual_seed(<span style="color: #d3869b; font-weight: bold;">0</span>)
+</pre>
+</div>
+
+<pre class="example">
+&lt;torch._C.Generator at 0x7f36a5b65890&gt;
+</pre>
+
+
+<div class="org-src-container">
+<pre class="src src-jupyter-python"><span style="color: #fb4934;">def</span> <span style="color: #b8bb26;">training_set</span>():
+    <span style="color: #83a598;">xs</span> = []
+    <span style="color: #83a598;">ys</span> = []
+    <span style="color: #fb4934;">for</span> w <span style="color: #fb4934;">in</span> <span style="color: #83a598;">names</span>:
+        <span style="color: #83a598;">ks</span>, <span style="color: #83a598;">vs</span> = all_splits(ngram_n, w)
+        <span style="color: #83a598;">x</span> = <span style="color: #fe8019;">list</span>(ktoi[k] <span style="color: #fb4934;">for</span> k <span style="color: #fb4934;">in</span> ks)
+        <span style="color: #83a598;">y</span> = <span style="color: #fe8019;">list</span>(vtoi[v] <span style="color: #fb4934;">for</span> v <span style="color: #fb4934;">in</span> vs)
+        xs.extend(x)
+        ys.extend(y)
+    <span style="color: #fb4934;">return</span> (torch.tensor(xs), torch.tensor(ys))
+
+<span style="color: #83a598;">xs</span>, <span style="color: #83a598;">ys</span> = training_set()
+</pre>
+</div>
+
+<p>
+We&rsquo;ll only have a single set of weights here, since we only have one layer.
+</p>
+
+<div class="org-src-container">
+<pre class="src src-jupyter-python">torch.manual_seed(<span style="color: #d3869b; font-weight: bold;">0</span>)
+
+<span style="color: #83a598;">W</span> = torch.randn((nk, nv), dtype=torch.float32, requires_grad=<span style="color: #d3869b;">True</span>, device=<span style="color: #b8bb26;">'cuda'</span>) <span style="color: #928374;"># </span><span style="color: #928374;">nk * nv</span>
+</pre>
+</div>
+</div>
+
+<div id="outline-container-org7d69daa" class="outline-3">
+<h3 id="org7d69daa"><span class="section-number-3">4.1.</span> The forward pass</h3>
+<div class="outline-text-3" id="text-4-1">
+<div class="org-src-container">
+<pre class="src src-jupyter-python"><span style="color: #fb4934;">def</span> <span style="color: #b8bb26;">forward</span>(xs): <span style="color: #928374;"># </span><span style="color: #928374;">N</span>
+    <span style="color: #83a598;">xs_enc</span> = F.one_hot(xs, num_classes=nk).<span style="color: #fe8019;">float</span>().to(<span style="color: #b8bb26;">'cuda'</span>) <span style="color: #928374;"># </span><span style="color: #928374;">N * nk</span>
+    logits = xs_enc @ W <span style="color: #928374;"># </span><span style="color: #928374;">N * nv</span>
+    probs = logits.softmax(<span style="color: #d3869b; font-weight: bold;">1</span>)
+    <span style="color: #fb4934;">return</span> probs
+</pre>
+</div>
+</div>
+</div>
+
+<div id="outline-container-org375c032" class="outline-3">
+<h3 id="org375c032"><span class="section-number-3">4.2.</span> Sampling from the model</h3>
+<div class="outline-text-3" id="text-4-2">
+<div class="org-src-container">
+<pre class="src src-jupyter-python"><span style="color: #fb4934;">def</span> <span style="color: #b8bb26;">sample</span>(num_samples):
+    torch.manual_seed(<span style="color: #d3869b; font-weight: bold;">0</span>)
+    <span style="color: #83a598;">gens</span> = []
+    <span style="color: #fb4934;">for</span> i <span style="color: #fb4934;">in</span> <span style="color: #fe8019;">range</span>(num_samples):
+        <span style="color: #83a598;">out</span> = <span style="color: #b8bb26;">'.'</span> * (ngram_n - <span style="color: #d3869b; font-weight: bold;">1</span>)
+        <span style="color: #83a598;">n</span> = <span style="color: #d3869b; font-weight: bold;">0</span>
+        <span style="color: #83a598;">z</span> = <span style="color: #d3869b;">None</span>
+        <span style="color: #fb4934;">while</span> <span style="color: #d3869b;">True</span>:
+            probs = forward(torch.tensor([n]))
+            <span style="color: #83a598;">new_n</span> = torch.multinomial(probs, <span style="color: #d3869b; font-weight: bold;">1</span>, <span style="color: #d3869b;">True</span>).data.item()
+            <span style="color: #83a598;">n</span> = new_n
+            <span style="color: #fb4934;">if</span> n == <span style="color: #d3869b; font-weight: bold;">0</span>:
+                <span style="color: #fb4934;">break</span>
+            out += itov[n]
+            new_k = out[<span style="color: #d3869b; font-weight: bold;">1</span>-ngram_n:]
+            <span style="color: #fb4934;">if</span> new_k <span style="color: #fb4934;">not</span> <span style="color: #fb4934;">in</span> ktoi:
+                <span style="color: #fb4934;">break</span>
+            n = ktoi[new_k]
+        gens.append(out[ngram_n-<span style="color: #d3869b; font-weight: bold;">1</span>:])
+    <span style="color: #fb4934;">return</span> gens
+</pre>
+</div>
+</div>
+</div>
+
+<div id="outline-container-org926eed1" class="outline-3">
+<h3 id="org926eed1"><span class="section-number-3">4.3.</span> The training loop</h3>
+<div class="outline-text-3" id="text-4-3">
+<p>
+The learning rate schedule is just something random; I experimented with stuff like
+\(A \exp\left( \lambda \cdot \mathrm{loss_change} \right) \) but they didn&rsquo;t do that well
+and I didn&rsquo;t feel like tinkering much further with a poorly reinvented wheel.
+</p>
+<div class="org-src-container">
+<pre class="src src-jupyter-python"><span style="color: #fb4934;">def</span> <span style="color: #b8bb26;">train</span>(xs, ys):
+    W.<span style="color: #83a598;">grad</span> = <span style="color: #d3869b;">None</span>
+    <span style="color: #83a598;">old_loss</span> = <span style="color: #d3869b; font-weight: bold;">0.0</span>
+    <span style="color: #83a598;">losses</span> = []
+    <span style="color: #fb4934;">for</span> i <span style="color: #fb4934;">in</span> <span style="color: #fe8019;">range</span>(<span style="color: #d3869b; font-weight: bold;">501</span>):
+        <span style="color: #83a598;">pred_ys</span> = forward(xs)
+        <span style="color: #83a598;">loss</span> = -pred_ys[torch.arange(<span style="color: #fe8019;">len</span>(xs)), ys].log().mean()
+        loss.backward()
+        <span style="color: #83a598;">new_loss</span> = loss.data.item()
+        <span style="color: #83a598;">loss_change</span> = old_loss - new_loss
+        <span style="color: #83a598;">old_loss</span> = new_loss
+        losses.append(new_loss)
+        <span style="color: #fb4934;">if</span> i == <span style="color: #d3869b; font-weight: bold;">0</span>:
+            lr = <span style="color: #d3869b; font-weight: bold;">100</span>
+        <span style="color: #fb4934;">elif</span> i &lt; <span style="color: #d3869b; font-weight: bold;">10</span>:
+            lr = <span style="color: #d3869b; font-weight: bold;">10</span>
+        <span style="color: #fb4934;">elif</span> i &lt; <span style="color: #d3869b; font-weight: bold;">25</span>:
+            lr = <span style="color: #d3869b; font-weight: bold;">1</span>
+        <span style="color: #fb4934;">elif</span> i &lt; <span style="color: #d3869b; font-weight: bold;">50</span>:
+            lr = <span style="color: #d3869b; font-weight: bold;">0.1</span>
+        <span style="color: #fb4934;">elif</span> i &lt; <span style="color: #d3869b; font-weight: bold;">250</span>:
+            lr = <span style="color: #d3869b; font-weight: bold;">0.01</span>
+        <span style="color: #fb4934;">else</span>:
+            lr = <span style="color: #d3869b; font-weight: bold;">0.001</span>
+        lr = <span style="color: #fe8019;">float</span>(lr)
+        W.data += -lr * W.grad
+        <span style="color: #fb4934;">if</span> i % <span style="color: #d3869b; font-weight: bold;">50</span> == <span style="color: #d3869b; font-weight: bold;">0</span>:
+            samples = sample(<span style="color: #d3869b; font-weight: bold;">5</span>)
+            <span style="color: #fe8019;">print</span>(f<span style="color: #b8bb26;">'iter </span>{i}<span style="color: #b8bb26;">: </span>{lr=:.4f}<span style="color: #b8bb26;"> loss=</span>{loss.data.item():.4f}<span style="color: #b8bb26;">, </span>{samples=}<span style="color: #b8bb26;">'</span>)
+    <span style="color: #fb4934;">return</span> losses
+
+losses = train(xs, ys)
+</pre>
+</div>
+
+<pre class="example" id="orgcf77390">
+iter 0: lr=100.0000 loss=3.6698, samples=['m', 'pcdfuyxhksoraosbjeansxvfsfxxhhpphmkngrtzeljarrkhzxkchfeeqceu', 'spspcmmrcvgggeawfanxbhanvfeyshodpuansinvtgeeppx', 'rhuxoryaytdnbna', 'kcjtsybsegxannvfavtzu']
+iter 50: lr=0.0100 loss=2.5651, samples=['mami', 'auyni', 'soraleyalann', 'mi', 'fxxheeli']
+iter 100: lr=0.0100 loss=2.5555, samples=['mami', 'auyni', 'soraleyaladsxli', 'fxxheeli', 'kn']
+iter 150: lr=0.0100 loss=2.5424, samples=['mami', 'auyni', 'soraleyaladsxli', 'fxxheeli', 'kn']
+iter 200: lr=0.0100 loss=2.5315, samples=['m', 'mi', 'auyni', 'soraleyaladsxli', 'fxxheeli']
+iter 250: lr=0.0010 loss=2.5242, samples=['m', 'me', 'auyni', 'soraleyaladsxli', 'fxxhe']
+iter 300: lr=0.0010 loss=2.5234, samples=['m', 'me', 'auyni', 'soraleyaladsxli', 'fxxhe']
+iter 350: lr=0.0010 loss=2.5222, samples=['m', 'me', 'auyni', 'soraleyaladsxli', 'fxxhe']
+iter 400: lr=0.0010 loss=2.5206, samples=['m', 'me', 'auyni', 'soraleyaladsxli', 'fxxhe']
+iter 450: lr=0.0010 loss=2.5188, samples=['m', 'me', 'auyni', 'soraleyaladsxli', 'fxxheeli']
+iter 500: lr=0.0010 loss=2.5169, samples=['m', 'me', 'auyni', 'soraleyaladsxli', 'fxxheeli']
+</pre>
+</div>
+</div>
+
+<div id="outline-container-org2b3bec3" class="outline-3">
+<h3 id="org2b3bec3"><span class="section-number-3">4.4.</span> How did our losses change?</h3>
+<div class="outline-text-3" id="text-4-4">
+<div class="org-src-container">
+<pre class="src src-jupyter-python">plt.plot(losses)
+</pre>
+</div>
+
+<table border="2" cellspacing="0" cellpadding="6" rules="groups" frame="hsides">
+
+
+<colgroup>
+<col  class="org-left" />
+
+<col  class="org-left" />
+
+<col  class="org-left" />
+</colgroup>
+<tbody>
+<tr>
+<td class="org-left">&lt;matplotlib.lines.Line2D</td>
+<td class="org-left">at</td>
+<td class="org-left">0x7f35afdccbb0&gt;</td>
+</tr>
+</tbody>
+</table>
+
+<div id="org434693b" class="figure">
+<p><img src="./.ob-jupyter/aae51076ffd4ccca2f65a6a3101521a7a51f3eff.png" alt="aae51076ffd4ccca2f65a6a3101521a7a51f3eff.png" />
+</p>
+</div>
+</div>
+</div>
+
+<div id="outline-container-orgb9b78df" class="outline-3">
+<h3 id="orgb9b78df"><span class="section-number-3">4.5.</span> Extra: how low can the loss get?</h3>
+<div class="outline-text-3" id="text-4-5">
+<p>
+It&rsquo;s the loss of the frequency-based model on the training set:
+</p>
+<div class="org-src-container">
+<pre class="src src-jupyter-python"><span style="color: #83a598;">expected_loss</span> = -P[xs,ys].log().mean()
+<span style="color: #fe8019;">print</span>(expected_loss)
+</pre>
+</div>
+
+<pre class="example">
+tensor(2.4540)
+</pre>
+</div>
+</div>
+</div>
+</div>
+<div id="postamble" class="status">
+<p class="date">Created: 2023-08-13 Sun 14:14</p>
+</div>
+</body>
+</html>
